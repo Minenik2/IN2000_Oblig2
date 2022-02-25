@@ -29,6 +29,7 @@ class MainActivity : AppCompatActivity() {
 
     // creating a viewmodel for observer
     private val model: MainActivityViewModel = MainActivityViewModel()
+    private var dataSourceAlpacaParty: DataSource = DataSource(mutableListOf())
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -63,7 +64,7 @@ class MainActivity : AppCompatActivity() {
                     "valgdistrikt 1" ->{ //dersom man velger foerste posisjon
                         GlobalScope.launch {
                             withContext(Dispatchers.IO) {
-
+                                getMyDataDistrict(dataSourceAlpacaParty)
                             }
                         }
                         /*
@@ -88,6 +89,11 @@ class MainActivity : AppCompatActivity() {
                         }*/
                     }
                     "valgdistrikt 2" ->{
+                        GlobalScope.launch {
+                            withContext(Dispatchers.IO) {
+                                getMyDataDistrict2(dataSourceAlpacaParty)
+                            }
+                        }
                         /*
                         CoroutineScope(newSingleThreadContext("valgdistrikt2")).launch(Dispatchers.IO){ //gjoer det samme som "valgdistrikt 1"
                             try{
@@ -193,6 +199,7 @@ class MainActivity : AppCompatActivity() {
                 //pasteDataInRecycler(responseBody.returnList())
                 model.getAlpacaParty(responseBody)
                 getMyDataDistrict(responseBody)
+                dataSourceAlpacaParty = responseBody
             }
 
             override fun onFailure(call: Call<DataSource?>, t: Throwable) {
@@ -247,7 +254,7 @@ class MainActivity : AppCompatActivity() {
         println("dirstrikt 1 votes: " + {votes})
         println("dirstrikt 1 totalvotes:" + {totalVotes})
 
-        settInn(dataPartyList.returnList(), votes, totalVotes, 0)
+        settInn(dataPartyList.returnList(), votes, totalVotes)
     }
 
     private fun setInnStemmer(districtList : DistrictData, parties: DataSource): MutableList<Int> {
@@ -271,14 +278,45 @@ class MainActivity : AppCompatActivity() {
     }
 
     // fordeler stemmer til alle partier ut visuelt
-    private fun settInn(alpacapartyListe : MutableList<AlpacaParty>, s : MutableList<Int>, t : Int, districtIndex: Int){
+    private fun settInn(alpacapartyListe : MutableList<AlpacaParty>, s : MutableList<Int>, t : Int){
 
         for((pos, party) in alpacapartyListe.withIndex()){
             var prosent = (s[pos].toDouble() / t) * 100
             prosent = String.format("%.2f", prosent).toDouble()
-            party.voteTextList[districtIndex] = s[pos].toString() + " stemmer, " + prosent.toString() + "% av totalen"
+            party.voteText = s[pos].toString() + " stemmer, " + prosent.toString() + "% av totalen"
         }
 
         pasteDataInRecycler(alpacapartyListe)
+    }
+
+    private fun getMyDataDistrict2(myDataSource: DataSource) {
+        val retrofitBuilder = Retrofit.Builder()
+            .addConverterFactory(GsonConverterFactory.create())
+            .baseUrl(BASE_URL)
+            .build()
+            .create(ApiInterface::class.java)
+
+        val retrofitData = retrofitBuilder.getDataDistrict1("district2.json")
+
+        retrofitData.enqueue(object : Callback<DistrictData?> {
+            override fun onResponse(call: Call<DistrictData?>, response: Response<DistrictData?>) {
+                val responseBody = response.body()!!
+
+                //val myStringBuilder = StringBuilder()
+
+                //    myStringBuilder.append(responseBody.parties)
+                //    myStringBuilder.append("\n")
+                //    responseBody.returnList()
+                //binding.textView1.text = myStringBuilder
+                //println(myStringBuilder)
+                println(responseBody)
+                districtCalculateData(myDataSource, responseBody)
+            }
+
+            override fun onFailure(call: Call<DistrictData?>, t: Throwable) {
+                Toast.makeText(applicationContext, "ops system not loaded", Toast.LENGTH_SHORT).show()
+                println("Failed to call <DataSource>: $t")
+            }
+        })
     }
 }

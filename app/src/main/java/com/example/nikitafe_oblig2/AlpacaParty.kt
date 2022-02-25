@@ -9,7 +9,7 @@ data class AlpacaParty(
 ) {
     // legger til stemmer for task 4
     var votes: Int = 0
-    var voteTextList: ArrayList<String> = arrayListOf()
+    var voteTextList: MutableList<String> = arrayListOf()
     var voteText: String = ""
 
 }
