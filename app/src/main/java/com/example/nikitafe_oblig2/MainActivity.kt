@@ -7,9 +7,10 @@ import android.widget.ArrayAdapter
 import android.widget.Spinner
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import androidx.lifecycle.Observer
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.nikitafe_oblig2.databinding.ActivityMainBinding
+import com.github.kittinunf.fuel.Fuel
+import com.github.kittinunf.fuel.coroutines.awaitString
 import kotlinx.coroutines.*
 import layout.PartyAdapter
 import retrofit2.Call
@@ -17,7 +18,6 @@ import retrofit2.Callback
 import retrofit2.Response
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
-import retrofit2.http.GET
 
 
 private lateinit var binding: ActivityMainBinding
@@ -51,11 +51,12 @@ class MainActivity : AppCompatActivity() {
             taskMakeAPI()
         }
 
-        val activityObserver = Observer<AlpacaParty> {
-
+        model.getAlpacaParty().observe(this) {
+            if (it != null) {
+                binding.recyclerView.adapter = PartyAdapter(it)
+                binding.recyclerView.layoutManager = LinearLayoutManager(this)
+            }
         }
-
-        model.currentLiveData.observe(this, activityObserver)
 
         // listener når brukeren klikker på spinneren
         mySpinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener{ //hva som skjer når items i spinneren er valgt
@@ -113,6 +114,9 @@ class MainActivity : AppCompatActivity() {
                         //valgdistriktListe = hentvalgdistrikt.await()*/
                     }
                     "valgdistrikt 3" ->{
+                        getMyDataDistrict3(dataSourceAlpacaParty)
+
+
                         /*
                         CoroutineScope(newSingleThreadContext("valgdistrikt2")).launch(Dispatchers.IO){ //henter inn xml og lager objekter via xml parser
                             async{
@@ -197,7 +201,7 @@ class MainActivity : AppCompatActivity() {
                 //println(myStringBuilder)
                 println(responseBody.returnList())
                 //pasteDataInRecycler(responseBody.returnList())
-                model.getAlpacaParty(responseBody)
+                //model.getAlpacaParty(responseBody)
                 getMyDataDistrict(responseBody)
                 dataSourceAlpacaParty = responseBody
             }
@@ -240,9 +244,10 @@ class MainActivity : AppCompatActivity() {
         })
     }
 
-    private fun pasteDataInRecycler(dataList: MutableList<AlpacaParty>) {
-        binding.recyclerView.adapter = PartyAdapter(dataList)
-        binding.recyclerView.layoutManager = LinearLayoutManager(this)
+    private fun pasteDataInRecycler(dataList: MutableList<AlpacaPartyItem>) {
+        model.updateAlpacaParty(dataList)
+        //binding.recyclerView.adapter = PartyAdapter(dataList)
+        //binding.recyclerView.layoutManager = LinearLayoutManager(this)
     }
 
     // beregner dataen slik at vi fordeller stemmer til alle partier og finner %
@@ -278,7 +283,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     // fordeler stemmer til alle partier ut visuelt
-    private fun settInn(alpacapartyListe : MutableList<AlpacaParty>, s : MutableList<Int>, t : Int){
+    private fun settInn(alpacapartyListe : MutableList<AlpacaPartyItem>, s : MutableList<Int>, t : Int){
 
         for((pos, party) in alpacapartyListe.withIndex()){
             var prosent = (s[pos].toDouble() / t) * 100
@@ -319,4 +324,91 @@ class MainActivity : AppCompatActivity() {
             }
         })
     }
+
+    // function to read district3.xml file
+    private fun getMyDataDistrict3(myDataSource: DataSource) {
+        try{
+            GlobalScope.launch {
+                withContext(Dispatchers.IO) {
+                    val xml = Fuel.get("https://www.uio.no/studier/emner/matnat/ifi/IN2000/v22/obligatoriske-oppgaver/district3.xml").awaitString()
+                    //Log.d("ListePrint xml", xml.toString()) //sjekket om det funket
+                    val inputStream = xml.byteInputStream()
+                    //Log.d("ListePrint inputstream", inputStream.toString())
+                    val listOfParties = XmlParser().parse(inputStream) //parser informasjonen og faar tilbake liste med partier og hvor mange stemmer de fikk
+                    //Log.d("party objekter liste", listOfParties.toString())
+                    var stemmer = mutableListOf<Int>()
+                    var stemmetall : Int
+                    for(party in dataSourceAlpacaParty.returnList()){
+                        for(k in listOfParties){ //fordeler stemmer
+                            if(k.id == party.id){
+                                party.votes = k.votes!!
+                                k.votes?.let { stemmer.add(it) }
+                            }
+                        }
+                    }
+                    //Log.d("id1 total", id1.toString())
+                    //Log.d("id2 total", id2.toString())
+                    //Log.d("id3 total", id3.toString())
+                    //Log.d("id4 total", id4.toString())
+                    val totalmengdestemmer = stemmer.sum()
+                    //Log.d("valgdistrikt 3 a", alpacapartyListe.toString())
+                    //Log.d("valgdistrikt 3 s", stemmer.toString())
+                    //Log.d("valgdistrikt 3 t", totalmengdestemmer.toString())
+
+                    settInn(dataSourceAlpacaParty.returnList(), stemmer, totalmengdestemmer)
+                }
+            }
+        } catch(exception: Exception) {
+            println("A network request exception was thrown: ${exception.message}")
+        }
+
+
+        ///////
+        /*
+        val retrofitBuilder = Retrofit.Builder()
+                // trenger ikke å lage en xml parse fordi det er innebygd i retrofit
+            .addConverterFactory(JaxbConverterFactory.create())
+            .baseUrl(BASE_URL)
+            .build()
+            .create(ApiInterface::class.java)
+
+        val retrofitData = retrofitBuilder.getDataDistrict3()
+
+        retrofitData.enqueue(object : Callback<DistrictXMLData?> {
+            override fun onResponse(call: Call<DistrictXMLData?>, response: Response<DistrictXMLData?>) {
+                val responseBody = response.body()!!
+
+                //val myStringBuilder = StringBuilder()
+
+                //    myStringBuilder.append(responseBody.parties)
+                //    myStringBuilder.append("\n")
+                //    responseBody.returnList()
+                //binding.textView1.text = myStringBuilder
+                //println(myStringBuilder)
+                println("her kommer responsebody!")
+                println(responseBody)
+                //districtCalculateData(myDataSource, responseBody)
+            }
+
+            override fun onFailure(call: Call<DistrictXMLData?>, t: Throwable) {
+                Toast.makeText(applicationContext, "ops system not loaded", Toast.LENGTH_SHORT).show()
+                println("Failed to call <DataSource>: $t")
+            }
+        })
+        */
+    }
 }
+/*
+@Element(name="party")
+data class DistrictXML(val test: Int) {
+    @Element(name="id")
+    val id: Int = 0
+    @Element(name="votes")
+    val votes: Int = 0
+}
+
+@Root(name = "districtThree")
+class DistrictXMLData  (
+            @Element(name="party")
+            val party: ArrayList<DistrictXML>
+        )*/

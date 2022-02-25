@@ -15,7 +15,7 @@ interface ApiInterface {
     /*
     @GET("district2.json")
     fun getDataDistrict2(): Call<DistrictData>
-
-    @GET("district3.xml")
-    fun getDataDistrict3(): Call<DistrictData>*/
+*/
+    //@GET("district3.xml")
+    //fun getDataDistrict3(): Call<DistrictXMLData>
 }

@@ -6,13 +6,13 @@ import androidx.lifecycle.ViewModel
 class MainActivityViewModel: ViewModel() {
 
     // Create a LiveData med alpacaparty
-    val currentLiveData: MutableLiveData<AlpacaParty> by lazy {
-        MutableLiveData<AlpacaParty>()
+    private val partyListLiveData: MutableLiveData<MutableList<AlpacaPartyItem>> by lazy {
+        MutableLiveData<MutableList<AlpacaPartyItem>>()
     }
 
     // livedata for andre distrikter
-    private val currentDistrictLiveData: MutableLiveData<DistrictData> by lazy {
-        MutableLiveData<DistrictData>()
+    private val currentDistrictLiveData: MutableLiveData<MutableList<DistrictData>> by lazy {
+        MutableLiveData<MutableList<DistrictData>>()
     }
 
     // livedata for datasource
@@ -21,16 +21,20 @@ class MainActivityViewModel: ViewModel() {
     }
 
     // metode fra mainacitivtyveiwmodel som henter listen med alpakka objekter fra datasource objektet vårt
-    fun getAlpacaParty(currentDataSource: DataSource) {
-        for (alpacaParty in currentDataSource.returnList()) {
-            currentLiveData.value = alpacaParty
-        }
+    fun getAlpacaParty(): MutableLiveData<MutableList<AlpacaPartyItem>> {
+        return partyListLiveData
+    }
+
+    fun updateAlpacaParty(alpList: MutableList<AlpacaPartyItem>) {
+        partyListLiveData.postValue(alpList)
     }
 
     // metode fra mainacitivtyveiwmodel som henter listen med alpakka objekter fra datasource objektet vårt
-    fun getDistrictData(currentDistrictData: DistrictData) {
-            currentDistrictLiveData.value = currentDistrictData
+    fun getDistrictData(): MutableLiveData<MutableList<DistrictData>> {
+        return currentDistrictLiveData
     }
 
-
+    fun updateDistrictData(currentDistrictData: MutableList<DistrictData>) {
+        currentDistrictLiveData.postValue(currentDistrictData)
+    }
 }

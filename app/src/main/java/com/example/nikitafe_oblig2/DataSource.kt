@@ -1,11 +1,10 @@
 package com.example.nikitafe_oblig2
 
 data class DataSource(
-    val parties: MutableList<AlpacaParty>
+    val parties: MutableList<AlpacaPartyItem>
 ) {
-
     // lag grensesnitt som returnerer en list kravet
-    fun returnList(): MutableList<AlpacaParty> {
+    fun returnList(): MutableList<AlpacaPartyItem> {
         return parties
     }
 }
