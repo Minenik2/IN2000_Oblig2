@@ -53,4 +53,7 @@ dependencies {
     implementation 'com.squareup.retrofit2:retrofit:2.9.0'
     // gson for retro
     implementation 'com.squareup.retrofit2:converter-gson:2.9.0'
+    // fuel
+    implementation 'com.github.kittinunf.fuel:fuel:2.3.1'
+    implementation 'com.github.kittinunf.fuel:fuel-coroutines:2.3.1'
 }
