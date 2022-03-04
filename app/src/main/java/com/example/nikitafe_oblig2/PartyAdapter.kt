@@ -22,8 +22,6 @@ class PartyAdapter(
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         //gaar gjennom hver alpakaparty i lista og bruker adapater for aa sette informasjonen i kort
         for(i in mutableParties){
-            println(i)
-            println("lol kekw vi går")
             i.let { holder.bind(mutableParties[position]) }
         }
     }

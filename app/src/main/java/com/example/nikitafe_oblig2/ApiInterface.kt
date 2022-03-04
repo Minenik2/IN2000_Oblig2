@@ -7,7 +7,7 @@ import retrofit2.http.Path
 interface ApiInterface {
 
     @GET("alpacaparties.json")
-    fun getData(): Call<DataSource>
+    fun getData(): Call<AlpacaParty>
 
     @GET("{base}")
     fun getDataDistrict1(@Path("base") baseId: String): Call<DistrictData>
